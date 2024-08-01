@@ -28,5 +28,6 @@ namespace testmid.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+        //Hieu dau roi
     }
 }
