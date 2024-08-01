@@ -17,6 +17,39 @@ namespace testmid.Controllers
         {
             _context = context;
         }
+        //--------------//
+        // GET: Suppliers/Local
+        public async Task<IActionResult> Local()
+        {
+            var localSuppliers = await _context.Suppliers
+                .Where(s => !s.IsImporter)
+                .Select(s => new SupplierViewModel
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    PartsCount = s.Parts.Count
+                })
+                .ToListAsync();
+
+            return View(localSuppliers);
+        }
+
+        // GET: Suppliers/Importers
+        public async Task<IActionResult> Importers()
+        {
+            var importers = await _context.Suppliers
+                .Where(s => s.IsImporter)
+                .Select(s => new SupplierViewModel
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    PartsCount = s.Parts.Count
+                })
+                .ToListAsync();
+
+            return View(importers);
+        }
+        //--------------//
 
         // GET: Suppliers
         public async Task<IActionResult> Index()
