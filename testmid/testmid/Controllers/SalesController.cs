@@ -17,6 +17,19 @@ namespace testmid.Controllers
         {
             _context = context;
         }
+        //---------------//
+        // GET: Sales/discounted
+        public async Task<IActionResult> Discounted()
+        {
+            var discountedSales = await _context.Sales
+                .Include(s => s.Car)
+                .Include(s => s.Customer)
+                .Where(s => s.Discount > 0)
+                .ToListAsync();
+
+            return View(discountedSales);
+        }
+        //---------------//
 
         // GET: Sales
         public async Task<IActionResult> Index()

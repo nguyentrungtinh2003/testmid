@@ -19,6 +19,7 @@ namespace testmid.Controllers
             _context = context;
         }
         //---------------//
+        // GET : {host}/Customers/customer/{id}
         public async Task<IActionResult> customer(int? id)
         {
             if (id == null)
