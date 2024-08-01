@@ -1,1 +1,2 @@
 # testmid
+Nguyen Trung Tinh
