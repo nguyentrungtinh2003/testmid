@@ -5,55 +5,27 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using testmid.Models;
 using testmid.Models.Data;
 
 namespace testmid.Controllers
 {
-    public class CustomersController : Controller
+    public class SalesController : Controller
     {
         private readonly CarDealerContext _context;
 
-        public CustomersController(CarDealerContext context)
+        public SalesController(CarDealerContext context)
         {
             _context = context;
         }
-        //---------------//
-        public async Task<IActionResult> customer(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
 
-            var customer = await _context.Customers
-                .Include(c => c.Sales)
-                .ThenInclude(s => s.Car)
-                .FirstOrDefaultAsync(m => m.Id == id);
-
-            if (customer == null)
-            {
-                return NotFound();
-            }
-
-            var viewModel = new CustomerSalesViewModel
-            {
-                Name = customer.Name,
-                BoughtCarsCount = customer.Sales.Count,
-               
-            };
-
-            return View(viewModel);
-        }
-        //---------------//
-
-        // GET: Customers
+        // GET: Sales
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Customers.ToListAsync());
+            var carDealerContext = _context.Sales.Include(s => s.Car).Include(s => s.Customer);
+            return View(await carDealerContext.ToListAsync());
         }
 
-        // GET: Customers/Details/5
+        // GET: Sales/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -61,39 +33,45 @@ namespace testmid.Controllers
                 return NotFound();
             }
 
-            var customer = await _context.Customers
+            var sale = await _context.Sales
+                .Include(s => s.Car)
+                .Include(s => s.Customer)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (customer == null)
+            if (sale == null)
             {
                 return NotFound();
             }
 
-            return View(customer);
+            return View(sale);
         }
 
-        // GET: Customers/Create
+        // GET: Sales/Create
         public IActionResult Create()
         {
+            ViewData["CarId"] = new SelectList(_context.Cars, "Id", "Id");
+            ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "Id");
             return View();
         }
 
-        // POST: Customers/Create
+        // POST: Sales/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,BirthDate,IsYoungDriver")] Customer customer)
+        public async Task<IActionResult> Create([Bind("Id,CarId,CustomerId,Discount")] Sale sale)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(customer);
+                _context.Add(sale);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            return View(customer);
+            ViewData["CarId"] = new SelectList(_context.Cars, "Id", "Id", sale.CarId);
+            ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "Id", sale.CustomerId);
+            return View(sale);
         }
 
-        // GET: Customers/Edit/5
+        // GET: Sales/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -101,22 +79,24 @@ namespace testmid.Controllers
                 return NotFound();
             }
 
-            var customer = await _context.Customers.FindAsync(id);
-            if (customer == null)
+            var sale = await _context.Sales.FindAsync(id);
+            if (sale == null)
             {
                 return NotFound();
             }
-            return View(customer);
+            ViewData["CarId"] = new SelectList(_context.Cars, "Id", "Id", sale.CarId);
+            ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "Id", sale.CustomerId);
+            return View(sale);
         }
 
-        // POST: Customers/Edit/5
+        // POST: Sales/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,BirthDate,IsYoungDriver")] Customer customer)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,CarId,CustomerId,Discount")] Sale sale)
         {
-            if (id != customer.Id)
+            if (id != sale.Id)
             {
                 return NotFound();
             }
@@ -125,12 +105,12 @@ namespace testmid.Controllers
             {
                 try
                 {
-                    _context.Update(customer);
+                    _context.Update(sale);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!CustomerExists(customer.Id))
+                    if (!SaleExists(sale.Id))
                     {
                         return NotFound();
                     }
@@ -141,10 +121,12 @@ namespace testmid.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(customer);
+            ViewData["CarId"] = new SelectList(_context.Cars, "Id", "Id", sale.CarId);
+            ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "Id", sale.CustomerId);
+            return View(sale);
         }
 
-        // GET: Customers/Delete/5
+        // GET: Sales/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -152,34 +134,36 @@ namespace testmid.Controllers
                 return NotFound();
             }
 
-            var customer = await _context.Customers
+            var sale = await _context.Sales
+                .Include(s => s.Car)
+                .Include(s => s.Customer)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (customer == null)
+            if (sale == null)
             {
                 return NotFound();
             }
 
-            return View(customer);
+            return View(sale);
         }
 
-        // POST: Customers/Delete/5
+        // POST: Sales/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var customer = await _context.Customers.FindAsync(id);
-            if (customer != null)
+            var sale = await _context.Sales.FindAsync(id);
+            if (sale != null)
             {
-                _context.Customers.Remove(customer);
+                _context.Sales.Remove(sale);
             }
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool CustomerExists(int id)
+        private bool SaleExists(int id)
         {
-            return _context.Customers.Any(e => e.Id == id);
+            return _context.Sales.Any(e => e.Id == id);
         }
     }
 }
